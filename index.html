@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Find the Critical Assumption</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Open+Sans:wght@400;500;600;700&display=swap">
+<style>
+html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+
+:root{
+  --ink:#101a20; --ink-2:#425560; --ink-3:#6d818c;
+  --ground:#f7f9fa; --surface:#ffffff; --raise:#ffffff;
+  --line:#dde5e9; --line-2:#c7d4da;
+  --accent:#03374f; --accent-ink:#0c5f84; --accent-wash:#e7f2f8;
+  --yes:#1280b0; --yes-wash:#e7f2f8; --yes-line:#a8cfe2;
+  --no:#b8801e; --no-wash:#fdf3e3; --no-line:#e5c589;
+  --scrim:rgba(16,26,32,.42);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#e8eff2; --ink-2:#a9bcc6; --ink-3:#7d919c;
+    --ground:#0d1519; --surface:#151f25; --raise:#1b262d;
+    --line:#26343c; --line-2:#3a4c55;
+    --accent:#37647d; --accent-ink:#8ccdea; --accent-wash:#16303d;
+    --yes:#4aaed9; --yes-wash:#12303d; --yes-line:#2c5a70;
+    --no:#e2ae5c; --no-wash:#33270f; --no-line:#6b5426;
+    --scrim:rgba(0,0,0,.62);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#e8eff2; --ink-2:#a9bcc6; --ink-3:#7d919c;
+  --ground:#0d1519; --surface:#151f25; --raise:#1b262d;
+  --line:#26343c; --line-2:#3a4c55;
+  --accent:#37647d; --accent-ink:#8ccdea; --accent-wash:#16303d;
+  --yes:#4aaed9; --yes-wash:#12303d; --yes-line:#2c5a70;
+  --no:#e2ae5c; --no-wash:#33270f; --no-line:#6b5426;
+  --scrim:rgba(0,0,0,.62);
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);
+  font-family:"Open Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:62rem;margin:0 auto;padding:1.25rem 1rem 7rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+header.top{padding:.25rem 0 .9rem;border-bottom:1px solid var(--line);margin-bottom:.4rem}
+.eyebrow{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink);font-weight:700;margin:0 0 .5rem}
+h1{font-family:Newsreader,Georgia,serif;font-weight:500;font-size:2rem;line-height:1.12;
+  margin:0 0 .55rem;text-wrap:balance;letter-spacing:-.012em}
+.chip{flex:none;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:.16rem .42rem;border-radius:4px;border:1px solid}
+.chip.y{color:var(--yes);background:var(--yes-wash);border-color:var(--yes-line)}
+.chip.n{color:var(--no);background:var(--no-wash);border-color:var(--no-line)}
+label.fld{display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;margin:0 0 .3rem}
+input[type=text],textarea{width:100%;font:inherit;font-size:.92rem;color:var(--ink);
+  background:var(--surface);border:1px solid var(--line-2);border-radius:6px;padding:.5rem .6rem}
+textarea{resize:vertical;min-height:4.5rem;line-height:1.45}
+input::placeholder,textarea::placeholder{color:var(--ink-3)}
+
+.lede{margin:0;color:var(--ink-2);font-size:.95rem;max-width:44rem}
+section.acc{border:1px solid var(--line);border-radius:9px;background:var(--surface);
+  margin:0 0 .5rem;overflow:hidden}
+section.acc.open{border-color:var(--line-2)}
+button.cathead{width:100%;display:flex;align-items:center;gap:.7rem;text-align:left;cursor:pointer;
+  font:inherit;color:var(--ink);background:transparent;border:0;padding:.85rem;min-height:3rem}
+button.cathead:hover{background:var(--accent-wash)}
+.caret{flex:none;color:var(--ink-3);font-size:.62rem;line-height:1;display:inline-block;
+  transition:transform .15s ease}
+section.acc.open .caret{transform:rotate(90deg);color:var(--accent-ink)}
+@media (prefers-reduced-motion:reduce){.caret{transition:none}}
+.ct{flex:1;min-width:0;display:flex;flex-direction:column;gap:.12rem}
+.cname{font-family:Newsreader,Georgia,serif;font-size:1.05rem;font-weight:600;line-height:1.22}
+.cnote{font-size:.76rem;color:var(--ink-3);line-height:1.32}
+.cmeta{flex:none;display:flex;align-items:center;gap:.35rem}
+.cmeta .n{font-size:.68rem;font-weight:700;color:var(--ink-3);font-variant-numeric:tabular-nums;
+  border:1px solid var(--line-2);border-radius:10px;padding:.06rem .42rem}
+.cmark{font-size:.66rem;font-weight:700;color:var(--yes);background:var(--yes-wash);
+  border:1px solid var(--yes-line);border-radius:10px;padding:.06rem .42rem;white-space:nowrap}
+section.acc .grid{padding:.75rem .85rem .85rem;border-top:1px solid var(--line)}
+h2.cat{font-family:Newsreader,Georgia,serif;font-size:1.1rem;font-weight:600;
+  margin:1.7rem 0 .55rem;display:flex;align-items:baseline;gap:.6rem}
+h2.cat .n{font-family:"Open Sans",sans-serif;font-size:.68rem;font-weight:700;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;border:1px solid var(--line-2);border-radius:10px;padding:.05rem .4rem}
+h2.cat .note{font-family:"Open Sans",sans-serif;font-size:.78rem;font-weight:400;color:var(--ink-3)}
+
+.grid{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fill,minmax(14.5rem,1fr))}
+button.card{
+  font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:.3rem;
+  background:var(--surface);color:var(--ink);border:1px solid var(--line);
+  border-radius:9px;padding:.75rem .8rem;min-height:5.6rem;position:relative;
+  transition:border-color .12s ease, transform .12s ease;
+}
+button.card:hover{border-color:var(--line-2);transform:translateY(-1px)}
+button.card .nm{font-size:.92rem;font-weight:600;line-height:1.28}
+button.card .by{font-size:.76rem;color:var(--ink-3);line-height:1.32}
+button.card .flags{display:flex;gap:.3rem;margin-top:auto;padding-top:.35rem}
+.tag{font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  padding:.12rem .38rem;border-radius:4px;border:1px solid}
+.tag.y{color:var(--yes);background:var(--yes-wash);border-color:var(--yes-line)}
+.tag.n{color:var(--no);background:var(--no-wash);border-color:var(--no-line)}
+button.card.on-y{border-color:var(--yes-line);box-shadow:inset 3px 0 0 var(--yes)}
+button.card.on-n{border-color:var(--no-line);box-shadow:inset 3px 0 0 var(--no)}
+button.card.on-both{border-color:var(--line-2);box-shadow:inset 3px 0 0 var(--yes),inset -3px 0 0 var(--no)}
+button.card .more{font-size:.7rem;color:var(--accent-ink);font-weight:600}
+
+.scrim{position:fixed;inset:0;background:var(--scrim);display:flex;align-items:flex-end;
+  justify-content:center;padding:0;z-index:50}
+@media (min-width:40rem){.scrim{align-items:center;padding:1.5rem}}
+.sheet{background:var(--raise);width:100%;max-width:33rem;max-height:88vh;overflow-y:auto;
+  border:1px solid var(--line-2);border-radius:12px 12px 0 0;padding:1.1rem 1.1rem 1.3rem}
+@media (min-width:40rem){.sheet{border-radius:12px}}
+.sheet .shead{display:flex;gap:.9rem;align-items:flex-start;justify-content:space-between}
+.sheet h3{font-family:Newsreader,Georgia,serif;font-size:1.3rem;font-weight:600;
+  margin:0 0 .2rem;line-height:1.2;text-wrap:balance}
+.sheet .by{font-size:.82rem;color:var(--ink-3)}
+button.x{font:inherit;flex:none;cursor:pointer;background:transparent;border:1px solid var(--line-2);
+  color:var(--ink-2);border-radius:6px;width:2rem;height:2rem;font-size:1rem;line-height:1}
+dl.ctx{margin:1rem 0 0;padding:.85rem 0 0;border-top:1px solid var(--line);display:grid;gap:.3rem}
+dl.ctx dt{font-size:.64rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
+dl.ctx dd{margin:0 0 .55rem;font-size:.86rem;color:var(--ink-2);line-height:1.45}
+dl.ctx dd:last-child{margin-bottom:0}
+.picks{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:1rem 0 0}
+button.mark{font:inherit;font-size:.8rem;font-weight:700;cursor:pointer;border-radius:7px;
+  padding:.6rem .5rem;background:var(--surface);color:var(--ink-2);border:1px solid var(--line-2)}
+button.mark:hover{border-color:var(--ink-3)}
+button.mark.y[aria-pressed="true"]{background:var(--yes);border-color:var(--yes);color:#fff}
+button.mark.n[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:#fff}
+button.mark:disabled{opacity:.4;cursor:not-allowed}
+.whyblock{margin:.8rem 0 0;display:grid;gap:.3rem}
+.whyblock .lab{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.whyblock .lab.y{color:var(--yes)} .whyblock .lab.n{color:var(--no)}
+button.done{font:inherit;font-weight:700;font-size:.88rem;cursor:pointer;width:100%;margin-top:1rem;
+  background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:7px;padding:.62rem}
+
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line-2);
+  padding:.7rem 1rem;display:flex;align-items:center;gap:.8rem;justify-content:space-between;z-index:20}
+.bar .inner{max-width:62rem;margin:0 auto;width:100%;display:flex;align-items:center;
+  gap:.8rem;justify-content:space-between}
+.bar .counts{font-size:.8rem;color:var(--ink-2);font-variant-numeric:tabular-nums;line-height:1.3}
+.bar .counts b{font-weight:700}
+button.send{font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;flex:none;
+  background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:7px;padding:.6rem 1.15rem}
+button.send:disabled{background:var(--line-2);border-color:var(--line-2);color:var(--ink-3);cursor:not-allowed}
+
+.note{padding:.7rem .8rem;border-radius:8px;font-size:.85rem;border:1px solid;margin:1rem 0 0}
+.note.warn{background:var(--no-wash);border-color:var(--no-line);color:var(--ink)}
+.note.demo{background:var(--accent-wash);border-color:var(--line-2);color:var(--ink-2);font-size:.8rem}
+
+.tally{display:grid;gap:.5rem;margin:0;padding:0;list-style:none;
+  grid-template-columns:repeat(auto-fill,minmax(19rem,1fr))}
+.tally li{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:.7rem .8rem}
+.tally .row{display:flex;align-items:baseline;justify-content:space-between;gap:.7rem}
+.tally .nm{font-size:.9rem;font-weight:600;line-height:1.3}
+.tally .nums{flex:none;font-size:.82rem;font-weight:700;font-variant-numeric:tabular-nums}
+.tally .nums .g{color:var(--yes)} .tally .nums .p{color:var(--no)}
+.meter{display:flex;height:5px;border-radius:3px;overflow:hidden;background:var(--line);margin-top:.5rem}
+.meter i{display:block;height:100%}
+.meter i.g{background:var(--yes)} .meter i.p{background:var(--no)}
+.quotes{margin:.55rem 0 0;padding:0;list-style:none;display:grid;gap:.32rem}
+.quotes li{font-size:.81rem;color:var(--ink-2);padding-left:.6rem;border-left:2px solid var(--line-2);line-height:1.4}
+.quotes li.g{border-left-color:var(--yes-line)}
+.quotes li.p{border-left-color:var(--no-line)}
+.empty{color:var(--ink-3);font-size:.95rem}
+.foot{margin-top:2.2rem;padding-top:1rem;border-top:1px solid var(--line);font-size:.76rem;color:var(--ink-3)}
+</style>
+<script src="cards.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+
+<div class="wrap" id="app"></div>
+<div id="modal"></div>
+
+<script>
+const CONF  = window.ROOMREAD || {};
+const CATS  = CONF.cards  || [];
+const COPY  = CONF.copy   || {};
+const JOBS  = {};
+CATS.forEach(c => c.jobs.forEach(j => JOBS[j.id] = Object.assign({cat:c.name}, j)));
+const MAX   = CONF.max || 3;
+const CAP   = ["one","two","three","four","five"][MAX - 1] || MAX;   // the cap in words, for prose
+
+
+const app = document.getElementById("app");
+const modal = document.getElementById("modal");
+const present = location.hash === "#present";
+let reachable = false, rows = [];
+let state = { green:{}, pink:{}, open:null, cat:null, scrollCat:null };
+let sent = false, sending = false, responses = 0;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nGreen = () => Object.keys(state.green).length;
+const nPink  = () => Object.keys(state.pink).length;
+
+function toggle(kind, id){
+  const bag = kind === "green" ? state.green : state.pink;
+  if (id in bag) delete bag[id];
+  else { if (Object.keys(bag).length >= MAX) return; bag[id] = ""; }
+  renderAll();
+}
+function setWhy(kind, id, v){
+  const bag = kind === "green" ? state.green : state.pink;
+  if (id in bag) bag[id] = v;
+}
+function open(id){ state.open = id; renderAll(); }
+function toggleCat(i){ state.cat = (state.cat === i) ? null : i; state.scrollCat = state.cat; renderAll(); }
+function close(){ state.open = null; renderAll(); }
+
+async function submit(){
+  if (sending || nGreen() + nPink() === 0) return;
+  if (!reachable){ sent = true; renderAll(); return; }   // preview: show the flow, save nothing
+  sending = true; renderAll();
+  try {
+    await post({
+      compelling: Object.entries(state.green).map(([id,why]) => ({job:id, label:JOBS[id].name, why:why.trim()})),
+      watchouts:  Object.entries(state.pink ).map(([id,why]) => ({job:id, label:JOBS[id].name, why:why.trim()}))
+    });
+    sent = true; pull();
+  } catch (e) {
+    sending = false; renderAll();
+    alert("That didn't save. Check your connection and press Send again.");
+    return;
+  }
+  sending = false; renderAll();
+}
+
+function tallies(){
+  const t = {};
+  Object.keys(JOBS).forEach(id => t[id] = {g:0,p:0,gw:[],pw:[]});
+  const src = reachable ? rows : [].concat(
+    Object.entries(state.green).map(([id,w]) => ({kind:"backed", job:id, comment:w})),
+    Object.entries(state.pink ).map(([id,w]) => ({kind:"assumption", job:id, comment:w})));
+  src.forEach(r => {
+    const c = t[r.job]; if (!c) return;
+    if (r.kind === "backed"){ c.g++; if (r.comment) c.gw.push(r.comment); }
+    else { c.p++; if (r.comment) c.pw.push(r.comment); }
+  });
+  return t;
+}
+
+function resultsHTML(quotes){
+  const t = tallies();
+  const rows = Object.values(JOBS).map(j => ({j, ...t[j.id]}))
+    .filter(r => r.g || r.p).sort((a,b) => (b.g+b.p) - (a.g+a.p));
+  if (!rows.length) return '<p class="empty">No responses yet. They appear here as people send them.</p>';
+  const max = Math.max(...rows.map(r => r.g + r.p));
+  return '<ul class="tally">' + rows.map(r => `
+    <li><div class="row"><span class="nm">${esc(r.j.name)}</span>
+      <span class="nums"><span class="g">${r.g}</span> / <span class="p">${r.p}</span></span></div>
+      <div class="meter" role="img" aria-label="${r.g} backed, ${r.p} flagged">
+        <i class="g" style="width:${(r.g/max)*100}%"></i><i class="p" style="width:${(r.p/max)*100}%"></i></div>
+      ${quotes && (r.gw.length||r.pw.length) ? '<ul class="quotes">' +
+        r.gw.map(w => `<li class="g">${esc(w)}</li>`).join("") +
+        r.pw.map(w => `<li class="p">${esc(w)}</li>`).join("") + '</ul>' : ""}
+    </li>`).join("") + '</ul>';
+}
+
+function renderSheet(){
+  if (!state.open){ modal.innerHTML = ""; return; }
+  const j = JOBS[state.open];
+  const g = j.id in state.green, p = j.id in state.pink;
+  modal.innerHTML = `
+    <div class="scrim" id="scrim">
+      <div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(j.name)}">
+        <div class="shead">
+          <div><h3>${esc(j.name)}</h3><div class="by">${esc(j.who)}</div></div>
+          <button class="x" id="x" aria-label="Close">✕</button>
+        </div>
+        <dl class="ctx">
+          <dt>Solved today by</dt><dd>${esc(j.today)}</dd>
+          <dt>What has to be true</dt><dd>${esc(j.bet)}</dd>
+        </dl>
+        <div class="picks">
+          <button class="mark y" data-k="green" aria-pressed="${g}" ${!g && nGreen()>=MAX ? "disabled":""}>
+            ${g ? "✓ " + (COPY.axisADone || "Backed") : (COPY.axisA || "Back it")}</button>
+          <button class="mark n" data-k="pink" aria-pressed="${p}" ${!p && nPink()>=MAX ? "disabled":""}>
+            ${p ? "✓ " + (COPY.axisBDone || "Flagged") : (COPY.axisB || "Name an assumption")}</button>
+        </div>
+        ${g ? `<div class="whyblock"><span class="lab y">Why you'd back it</span>
+          <textarea data-w="green" placeholder="What makes this one real?">${esc(state.green[j.id])}</textarea></div>` : ""}
+        ${p ? `<div class="whyblock"><span class="lab n">${COPY.axisBPrompt || "The assumption that could kill it"}</span>
+          <textarea data-w="pink" placeholder="What has to be true that might not be?">${esc(state.pink[j.id])}</textarea></div>` : ""}
+        <button class="done" id="done">Done</button>
+      </div>
+    </div>`;
+  modal.querySelector("#x").onclick = close;
+  modal.querySelector("#done").onclick = close;
+  modal.querySelector("#scrim").onclick = e => { if (e.target.id === "scrim") close(); };
+  modal.querySelectorAll("button.mark").forEach(b => b.onclick = () => toggle(b.dataset.k, j.id));
+  modal.querySelectorAll("textarea[data-w]").forEach(t =>
+    t.oninput = e => setWhy(e.target.dataset.w, j.id, e.target.value));
+  const f = modal.querySelector("button.mark:not(:disabled)") || modal.querySelector("#x");
+  if (f) f.focus();
+}
+
+function renderPage(){
+  if (present){
+    app.innerHTML = `<header class="top"><p class="eyebrow">Live · ${COPY.eyebrow || "Live results"}</p>
+      <h1>What the room is saying</h1>
+      <p class="lede">Blue is worth backing. Amber carries a critical assumption that could kill it.
+        ${reachable ? responses : 1} response${(reachable?responses:1)===1?"":"s"} in.</p></header>
+      <div style="margin-top:1.2rem">${resultsHTML(true)}</div>`;
+    return;
+  }
+  if (sent){
+    app.innerHTML = `<header class="top"><p class="eyebrow">Thank you</p><h1>Got it.</h1>
+      <p class="lede">What the room has said so far. It updates as people send theirs.</p></header>
+      <div style="margin-top:1.2rem">${resultsHTML(false)}</div>
+      <p class="foot">${COPY.footer || ""}</p>`;
+    return;
+  }
+  const blocked = false;
+  app.innerHTML = `
+    <header class="top">
+      <h1>${COPY.title || "What would you back?"}</h1>
+      <p class="lede">Open a group, read a job, then mark it. <b>Back up to ${CAP}</b> you would bet on.
+        <b>Flag up to ${CAP}</b> and name the assumption that could kill them. A job can be both.</p>
+      ${!reachable ? `<p class="note demo">Preview. Everything works; answers are not saved yet.</p>` : ""}
+    </header>
+    ${CATS.map((c, ci) => {
+      const openCat = state.cat === ci;
+      const marked = c.jobs.filter(j => j.id in state.green || j.id in state.pink).length;
+      return `<section class="acc ${openCat ? "open" : ""}">
+      <button class="cathead" data-cat="${ci}" aria-expanded="${openCat}">
+        <span class="caret" aria-hidden="true">&#9654;</span>
+        <span class="ct"><span class="cname">${esc(c.name)}</span><span class="cnote">${esc(c.note)}</span></span>
+        <span class="cmeta">${marked ? `<span class="cmark">${marked} marked</span>` : ""}<span class="n">${c.jobs.length}</span></span>
+      </button>
+      ${!openCat ? "" : `<div class="grid">
+        ${c.jobs.map(j => {
+          const g = j.id in state.green, p = j.id in state.pink;
+          const cls = g && p ? "on-both" : g ? "on-y" : p ? "on-n" : "";
+          return `<button class="card ${cls}" data-id="${j.id}">
+            <span class="nm">${esc(j.name)}</span>
+            <span class="by">${esc(j.who)}</span>
+            <span class="flags">${g ? '<span class="tag y">Backed</span>' : ""}${p ? '<span class="tag n">Flagged</span>' : ""}${!g && !p ? '<span class="more">Read it →</span>' : ""}</span>
+          </button>`;
+        }).join("")}
+      </div>`}</section>`;
+    }).join("")}
+    <p class="foot">${COPY.footer || ""}</p>
+    <div class="bar"><div class="inner">
+      <div class="counts"><b>${nGreen()}</b>/${MAX} backed · <b>${nPink()}</b>/${MAX} flagged</div>
+      <button class="send" id="send" ${sending || (nGreen()+nPink())===0 ? "disabled":""}>
+        ${sending ? "Sending…" : "Send"}</button>
+    </div></div>`;
+
+  app.querySelectorAll("button.card").forEach(b => b.onclick = () => open(b.dataset.id));
+  app.querySelectorAll("button.cathead").forEach(b => b.onclick = () => toggleCat(+b.dataset.cat));
+  const s = document.getElementById("send");
+  if (s) s.onclick = submit;
+}
+
+function renderAll(){
+  const y = window.scrollY, target = state.scrollCat;
+  state.scrollCat = null;
+  renderPage(); renderSheet();
+  if (present || sent) return;
+  if (target !== null){
+    const h = app.querySelector('button.cathead[data-cat="' + target + '"]');
+    if (h){ h.scrollIntoView({block:"start", behavior:"smooth"}); return; }
+  }
+  window.scrollTo(0, y);
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape" && state.open) close(); });
+renderAll();
+
+const ENDPOINT = (window.ROOMREAD && window.ROOMREAD.endpoint || "").trim();
+
+async function post(payload){
+  const opts = { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+                 body: JSON.stringify(payload) };
+  let r;
+  try {
+    r = await fetch(ENDPOINT, opts);
+  } catch (err) {
+    // Some browsers block reading the Apps Script redirect. Fire it opaquely.
+    await fetch(ENDPOINT, Object.assign({}, opts, { mode:"no-cors" }));
+    return true;
+  }
+  // The collector answered. A refusal or an error page is a failed save, not a sent one.
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || "save failed");
+  return true;
+}
+
+async function pull(){
+  try {
+    const r = await fetch(ENDPOINT + "?t=" + Date.now(), { method:"GET" });
+    const j = await r.json();
+    if (j.ok) { responses = j.responses; rows = j.rows || []; renderAll(); }
+  } catch (err) { /* keep the last good view */ }
+}
+
+reachable = !!ENDPOINT;
+renderAll();
+if (present && ENDPOINT){ pull(); setInterval(pull, 8000); }
+</script>
+
+</body>
+</html>
